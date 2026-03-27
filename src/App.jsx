@@ -1,9 +1,9 @@
 import { useState } from "react";
 import QRCode from "qrcode";
 
-// ✅ PDF.js chuẩn cho Vite + Vercel
-import * as pdfjsLib from "pdfjs-dist/build/pdf";
-import pdfWorker from "pdfjs-dist/build/pdf.worker?url";
+// ✅ FIX CHUẨN VERCEL
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf";
+import pdfWorker from "pdfjs-dist/legacy/build/pdf.worker?url";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -13,12 +13,13 @@ export default function App() {
   const [fileName, setFileName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 📄 Đọc PDF
   const handleFile = async (e) => {
+    console.log("INPUT TRIGGERED");
+
     const file = e.target.files[0];
     if (!file) return;
 
-    console.log("FILE:", file);
+    console.log("FILE OK:", file.name);
 
     setFileName(file.name);
     setLoading(true);
@@ -26,9 +27,11 @@ export default function App() {
     try {
       const arrayBuffer = await file.arrayBuffer();
 
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer,
+      }).promise;
 
-      console.log("PDF pages:", pdf.numPages);
+      console.log("PDF LOADED:", pdf.numPages);
 
       let fullText = "";
 
@@ -40,21 +43,20 @@ export default function App() {
         fullText += strings.join(" ") + "\n";
       }
 
-      console.log("PDF TEXT:", fullText);
+      console.log("TEXT OK:", fullText);
 
       setText(fullText);
     } catch (err) {
       console.error("PDF ERROR:", err);
-      alert("❌ Lỗi đọc PDF");
+      alert("❌ Không đọc được PDF");
     }
 
     setLoading(false);
   };
 
-  // 🔥 Tạo QR chuẩn kế toán (basic)
   const generateQR = async () => {
     if (!text) {
-      alert("⚠️ Chưa có dữ liệu hóa đơn");
+      alert("⚠️ Chưa có dữ liệu");
       return;
     }
 
@@ -63,7 +65,7 @@ export default function App() {
       dt: new Date().toISOString().split("T")[0],
       sum: 0,
       cur: "EUR",
-      raw: text.slice(0, 500)
+      raw: text.slice(0, 500),
     };
 
     const url = await QRCode.toDataURL(JSON.stringify(data));
@@ -72,32 +74,24 @@ export default function App() {
 
   return (
     <div style={{ padding: 20 }}>
-      <h1>QR Invoice Generator (FINAL PRO)</h1>
+      <h1>QR Invoice Generator (FINAL FIX)</h1>
 
-      {/* Upload */}
       <input type="file" accept=".pdf" onChange={handleFile} />
       <p>{fileName}</p>
 
-      {/* Loading */}
-      {loading && <p>⏳ Đang đọc PDF (5–10s)...</p>}
+      {loading && <p>⏳ Đang đọc PDF...</p>}
 
-      {/* Text */}
       <textarea
         rows={12}
         style={{ width: "100%", marginTop: 10 }}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Text từ hóa đơn sẽ xuất hiện ở đây..."
       />
 
       <br />
 
-      {/* Button */}
-      <button onClick={generateQR}>
-        Generate QR
-      </button>
+      <button onClick={generateQR}>Generate QR</button>
 
-      {/* QR */}
       {qrUrl && (
         <div style={{ marginTop: 20 }}>
           <img src={qrUrl} alt="qr" />
