@@ -11,11 +11,37 @@ export default function App() {
     if (!file) return;
     setFileName(file.name);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setText(reader.result.slice(0, 2000));
-    };
-    reader.readAsText(file);
+    const handleFile = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  setFileName(file.name);
+  setLoading(true);
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let fullText = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+
+      const strings = content.items.map(item => item.str);
+      fullText += strings.join(" ") + "\n";
+    }
+
+    setText(fullText);
+
+  } catch (err) {
+    console.error(err);
+    alert("Lỗi đọc PDF");
+  }
+
+  setLoading(false);
+};
   };
 
   const generateQR = async () => {
